@@ -2,16 +2,16 @@
 
 > A Flask web application that fetches real-time stock data, predicts the next day's closing price using Linear Regression, and visualises 1-year price history 
 
-## ✨ Features
+##  Features
 
-- 🔍 **Search any stock** — supports US tickers (`AAPL`, `MSFT`, `GOOGL`) and Indian NSE tickers (`TCS.NS`, `INFY.NS`, `RELIANCE.NS`)
-- 💰 **Live price** — fetched in real time via Yahoo Finance (`yfinance`)
-- 🤖 **ML Prediction** — Linear Regression model predicts the next day's closing price
-- 📊 **1-Year Price Chart** — dark-themed matplotlib graph embedded directly in the page
-- 🟠 **Predicted point highlighted** on the chart
-- 📈 **Investment suggestion** based on the last 30-day trend (Uptrend / Downtrend)
-- ⚠️ **Stocks to Avoid sidebar** — auto-scans 10 popular stocks and flags those in a downtrend
-- 📱 **Fully responsive** — works on mobile, tablet, and desktop
+-  **Search any stock** — supports US tickers (`AAPL`, `MSFT`, `GOOGL`) and Indian NSE tickers (`TCS.NS`, `INFY.NS`, `RELIANCE.NS`)
+-  **Live price** — fetched in real time via Yahoo Finance (`yfinance`)
+-  **ML Prediction** — Linear Regression model predicts the next day's closing price
+-  **1-Year Price Chart** — dark-themed matplotlib graph embedded directly in the page
+-  **Predicted point highlighted** on the chart
+-  **Investment suggestion** based on the last 30-day trend (Uptrend / Downtrend)
+-  **Stocks to Avoid sidebar** — auto-scans 10 popular stocks and flags those in a downtrend
+-  **Fully responsive** — works on mobile, tablet, and desktop
 
 ---
 
