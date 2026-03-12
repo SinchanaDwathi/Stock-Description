@@ -1,0 +1,6 @@
+flask
+yfinance
+scikit-learn
+numpy
+matplotlib
+gunicorn

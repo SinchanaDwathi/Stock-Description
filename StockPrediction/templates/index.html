@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>StockSense – ML Price Predictor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:        #080c14;
+      --surface:   #0d1117;
+      --card:      #111820;
+      --border:    #1e2a3a;
+      --accent:    #00d4ff;
+      --accent2:   #ff6b35;
+      --green:     #00e676;
+      --red:       #ff4d6d;
+      --text:      #e8f4fd;
+      --muted:     #8b9ab0;
+      --mono:      'Space Mono', monospace;
+      --sans:      'DM Sans', sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: linear-gradient(135deg, #0d1117 0%, #111c2b 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 18px 24px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(12px);
+    }
+    .logo-icon {
+      width: 38px; height: 38px;
+      background: linear-gradient(135deg, var(--accent), #0077aa);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .logo-text { font-family: var(--mono); font-size: 1.1rem; color: var(--text); }
+    .logo-text span { color: var(--accent); }
+    .header-sub { margin-left: auto; font-size: 0.75rem; color: var(--muted); font-family: var(--mono); }
+
+    /* ── LAYOUT ── */
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 280px;
+      gap: 0;
+      min-height: calc(100vh - 73px);
+    }
+
+    .main-panel {
+      padding: 28px 28px 48px;
+      border-right: 1px solid var(--border);
+      overflow-x: hidden;
+    }
+
+    .sidebar {
+      padding: 28px 20px;
+      background: var(--surface);
+    }
+
+    /* ── SEARCH BOX ── */
+    .search-section { margin-bottom: 28px; }
+    .search-label {
+      font-size: 0.72rem;
+      font-family: var(--mono);
+      color: var(--accent);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      display: block;
+    }
+    .search-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .search-row input {
+      flex: 1;
+      min-width: 160px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 1rem;
+      padding: 12px 16px;
+      border-radius: 10px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      text-transform: uppercase;
+    }
+    .search-row input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(0,212,255,0.12);
+    }
+    .search-row input::placeholder { color: var(--muted); text-transform: none; }
+    .search-btn {
+      background: linear-gradient(135deg, var(--accent), #0090bb);
+      color: #000;
+      border: none;
+      font-family: var(--mono);
+      font-size: 0.9rem;
+      font-weight: 700;
+      padding: 12px 26px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      white-space: nowrap;
+    }
+    .search-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(0,212,255,0.3); }
+    .search-btn:active { transform: translateY(0); }
+    .hint { font-size: 0.75rem; color: var(--muted); margin-top: 8px; }
+    .hint code { color: var(--accent); background: rgba(0,212,255,0.08); padding: 1px 6px; border-radius: 4px; }
+
+    /* ── ERROR ── */
+    .error-box {
+      background: rgba(255,77,109,0.1);
+      border: 1px solid rgba(255,77,109,0.4);
+      border-radius: 10px;
+      padding: 14px 18px;
+      color: #ff8fa3;
+      font-size: 0.9rem;
+      margin-bottom: 20px;
+    }
+
+    /* ── STATS GRID ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 20px;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .stat-card:hover { transform: translateY(-2px); border-color: #2a3d55; }
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+    }
+    .stat-card.blue::before  { background: linear-gradient(90deg, var(--accent), transparent); }
+    .stat-card.orange::before{ background: linear-gradient(90deg, var(--accent2), transparent); }
+    .stat-card.green::before { background: linear-gradient(90deg, var(--green), transparent); }
+    .stat-card.red::before   { background: linear-gradient(90deg, var(--red), transparent); }
+
+    .stat-label { font-size: 0.7rem; color: var(--muted); font-family: var(--mono); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+    .stat-value { font-size: 1.55rem; font-family: var(--mono); font-weight: 700; color: var(--text); }
+    .stat-value.blue   { color: var(--accent); }
+    .stat-value.orange { color: var(--accent2); }
+    .stat-value.green  { color: var(--green); }
+    .stat-value.red    { color: var(--red); }
+    .stat-sub { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+
+    /* ── SUGGESTION ── */
+    .suggestion-box {
+      border-radius: 12px;
+      padding: 16px 20px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-bottom: 22px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid;
+    }
+    .suggestion-box.uptrend {
+      background: rgba(0,230,118,0.08);
+      border-color: rgba(0,230,118,0.35);
+      color: #69f0ae;
+    }
+    .suggestion-box.downtrend {
+      background: rgba(255,77,109,0.08);
+      border-color: rgba(255,77,109,0.35);
+      color: #ff8fa3;
+    }
+
+    /* ── GRAPH ── */
+    .graph-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .graph-header {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.72rem;
+      font-family: var(--mono);
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .graph-body { padding: 16px; }
+    .graph-body img {
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+      display: block;
+    }
+
+    /* ── STOCK NAME ── */
+    .stock-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 18px;
+    }
+    .stock-title .ticker-badge {
+      display: inline-block;
+      background: rgba(0,212,255,0.12);
+      color: var(--accent);
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      padding: 3px 10px;
+      border-radius: 6px;
+      margin-left: 10px;
+      vertical-align: middle;
+      border: 1px solid rgba(0,212,255,0.25);
+    }
+
+    /* ── PLACEHOLDER ── */
+    .placeholder {
+      background: var(--card);
+      border: 1px dashed var(--border);
+      border-radius: 14px;
+      padding: 60px 20px;
+      text-align: center;
+      color: var(--muted);
+    }
+    .placeholder .ph-icon { font-size: 3rem; margin-bottom: 14px; opacity: 0.4; }
+    .placeholder p { font-size: 0.9rem; }
+
+    /* ── SIDEBAR ── */
+    .sidebar-title {
+      font-size: 0.7rem;
+      font-family: var(--mono);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--red);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .sidebar-title::before {
+      content: '';
+      width: 6px; height: 6px;
+      background: var(--red);
+      border-radius: 50%;
+      display: inline-block;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    .avoid-list { display: flex; flex-direction: column; gap: 10px; }
+    .avoid-item {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--red);
+      border-radius: 8px;
+      padding: 12px 14px;
+      transition: transform 0.15s;
+      cursor: default;
+    }
+    .avoid-item:hover { transform: translateX(3px); }
+    .avoid-ticker { font-family: var(--mono); font-size: 0.85rem; font-weight: 700; color: var(--text); }
+    .avoid-name { font-size: 0.72rem; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .avoid-price { font-family: var(--mono); font-size: 0.78rem; color: var(--red); margin-top: 5px; }
+
+    .no-avoid {
+      font-size: 0.82rem;
+      color: var(--muted);
+      text-align: center;
+      padding: 20px 10px;
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+    }
+
+    .sidebar-note {
+      font-size: 0.68rem;
+      color: var(--muted);
+      margin-top: 14px;
+      line-height: 1.5;
+      padding: 10px;
+      background: rgba(255,77,109,0.05);
+      border-radius: 8px;
+      border: 1px solid rgba(255,77,109,0.1);
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 820px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+      .sidebar {
+        border-top: 1px solid var(--border);
+        border-right: none;
+      }
+      .main-panel { padding: 20px 16px 40px; border-right: none; }
+      .stat-value { font-size: 1.3rem; }
+    }
+
+    @media (max-width: 480px) {
+      header { padding: 14px 16px; }
+      .logo-text { font-size: 0.95rem; }
+      .header-sub { display: none; }
+      .search-row { flex-direction: column; }
+      .search-btn { width: 100%; }
+    }
+
+    /* ── LOADING ── */
+    .loading-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(8,12,20,0.85);
+      z-index: 999;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .loading-overlay.active { display: flex; }
+    .spinner {
+      width: 44px; height: 44px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text { font-family: var(--mono); font-size: 0.85rem; color: var(--muted); }
+
+    /* ── FOOTER ── */
+    .footer {
+      text-align: center;
+      padding: 16px;
+      font-size: 0.72rem;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+      font-family: var(--mono);
+    }
+  </style>
+</head>
+<body>
+
+<div id="loadingOverlay" class="loading-overlay">
+  <div class="spinner"></div>
+  <p class="loading-text">Fetching data & running ML model…</p>
+</div>
+
+<header>
+  <div class="logo-icon">📈</div>
+  <div class="logo-text">Stock<span>Sense</span></div>
+  <div class="header-sub">ML-Powered Prediction Dashboard</div>
+</header>
+
+<div class="layout">
+  <!-- MAIN PANEL -->
+  <div class="main-panel">
+
+    <!-- Search -->
+    <div class="search-section">
+      <span class="search-label">🔍 Analyse a Stock</span>
+      <form method="POST" id="searchForm" onsubmit="showLoader()">
+        <div class="search-row">
+          <input type="text" name="ticker" placeholder="Enter ticker symbol e.g. AAPL, TCS.NS"
+                 value="{{ request.form.get('ticker','') }}" autocomplete="off" spellcheck="false" required />
+          <button type="submit" class="search-btn">Predict →</button>
+        </div>
+      </form>
+      <p class="hint">Examples: <code>AAPL</code> &nbsp; <code>MSFT</code> &nbsp; <code>TCS.NS</code> &nbsp; <code>INFY.NS</code> &nbsp; <code>GOOGL</code></p>
+    </div>
+
+    <!-- Error -->
+    {% if error %}
+    <div class="error-box">⚠️ {{ error }}</div>
+    {% endif %}
+
+    <!-- Results -->
+    {% if result %}
+
+    <div class="stock-title">
+      {{ result.name }}
+      <span class="ticker-badge">{{ result.ticker }}</span>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card blue">
+        <div class="stat-label">Current Price</div>
+        <div class="stat-value blue">{{ result.currency }} {{ "{:,.2f}".format(result.current_price) }}</div>
+        <div class="stat-sub">Live market data</div>
+      </div>
+      <div class="stat-card orange">
+        <div class="stat-label">Predicted (Next Day)</div>
+        <div class="stat-value orange">{{ result.currency }} {{ "{:,.2f}".format(result.predicted_price) }}</div>
+        <div class="stat-sub">Linear Regression Model</div>
+      </div>
+      <div class="stat-card {% if result.price_diff >= 0 %}green{% else %}red{% endif %}">
+        <div class="stat-label">Expected Change</div>
+        <div class="stat-value {% if result.price_diff >= 0 %}green{% else %}red{% endif %}">
+          {% if result.price_diff >= 0 %}+{% endif %}{{ "{:.2f}".format(result.price_diff) }}
+        </div>
+        <div class="stat-sub">{{ "{:+.2f}".format(result.price_diff_pct) }}% from current</div>
+      </div>
+    </div>
+
+    <div class="suggestion-box {{ result.suggestion_class }}">
+      {{ result.suggestion }}
+    </div>
+
+    <div class="graph-card">
+      <div class="graph-header">📊 &nbsp; 1-Year Closing Price Chart + ML Prediction</div>
+      <div class="graph-body">
+        <img src="data:image/png;base64,{{ result.graph }}" alt="Stock chart for {{ result.ticker }}" />
+      </div>
+    </div>
+
+    {% else %}
+    <div class="placeholder">
+      <div class="ph-icon">🔭</div>
+      <p>Enter a stock ticker above to fetch real-time data,<br>run the ML prediction model, and view the price chart.</p>
+    </div>
+    {% endif %}
+
+  </div><!-- /main-panel -->
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-title">Stocks to Avoid</div>
+
+    {% if downtrend_stocks %}
+    <div class="avoid-list">
+      {% for s in downtrend_stocks %}
+      <div class="avoid-item">
+        <div class="avoid-ticker">{{ s.ticker }}</div>
+        <div class="avoid-name">{{ s.name }}</div>
+        <div class="avoid-price">
+          {{ "{:,.2f}".format(s.price) }} &nbsp;|&nbsp; {{ "{:+.1f}".format(s.pct) }}% (30d)
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <p class="sidebar-note">⚠️ These popular stocks show a negative trend over the last 30 trading days. Exercise caution before investing.</p>
+    {% else %}
+    <div class="no-avoid">
+      ✅ No major downtrend stocks detected right now.
+    </div>
+    {% endif %}
+  </div>
+
+</div><!-- /layout -->
+
+<footer class="footer">
+  StockSense &nbsp;|&nbsp; MCA Student Project &nbsp;|&nbsp; Built with Flask · yfinance · scikit-learn &nbsp;|&nbsp;
+  ⚠️ Not financial advice
+</footer>
+
+<script>
+  function showLoader() {
+    document.getElementById('loadingOverlay').classList.add('active');
+  }
+</script>
+</body>
+</html>
